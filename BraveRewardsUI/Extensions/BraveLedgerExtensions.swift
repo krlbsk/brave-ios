@@ -55,7 +55,7 @@ extension BraveLedger {
   }
   
   var upholdWalletStatus: WalletStatus {
-    guard let userWallet = externalWallets[.uphold] else { return .notConnected }
+    guard let userWallet = upholdWallet else { return .notConnected }
     return userWallet.status
   }
   
@@ -151,7 +151,12 @@ extension BraveLedger {
       self.minimumVisitDuration = 8
       self.minimumNumberOfVisits = 1
       self.allowVideoContributions = true
-      self.allowUnverifiedPublishers = true
+      self.allowUnverifiedPublishers = false
+      self.contributionAmount = Double.greatestFiniteMagnitude
+      
+      if let ads = self.ads, BraveAds.isCurrentLocaleSupported() {
+        ads.isEnabled = true
+      }
       
       let group = DispatchGroup()
       var success = true
@@ -259,9 +264,6 @@ extension BraveLedger {
             
             self.attestPromotion(promotion.id, solution: solution) { result, promotion in
               if result == .ledgerOk {
-                if promotion?.type == .ads {
-                  MonthlyAdsGrantReminder.cancelCurrentMonth()
-                }
                 self.updatePendingAndFinishedPromotions {
                   completion(true)
                 }
@@ -273,17 +275,6 @@ extension BraveLedger {
         }
       }
     }
-  }
-}
-
-extension PublisherInfo {
-  /// Temporary conveninece method for converting the raw int now in
-  /// PublisherInfo, to the enum we've been using all along
-  var rewardsCategory: RewardsType {
-    guard let category = RewardsType(rawValue: Int(self.category)) else {
-      fatalError("Could not get a rewards category from category = \(self.category)")
-    }
-    return category
   }
 }
 
